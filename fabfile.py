@@ -35,7 +35,9 @@ class Host(object):
             with self._get_connection() as connection:
                 print('Running `{0}` on {1}'.format(command, self.host_ip))
                 result = connection.run(command, warn=True, hide='stderr')
-                # print(result)
+                print('**** Closing connection with {0}'.format(self.host_ip))
+                connection.close()
+
         except (socket_error, AuthenticationException) as exc:
             self._raise_authentication_err(exc)
 
@@ -53,6 +55,9 @@ class Host(object):
                     response = res_str
                 )
                 result = connection.run(command, warn=True, hide='stderr', pty=True, watchers=[passing])
+                print('**** Closing connection with {0}'.format(self.host_ip))
+                connection.close()
+
         except (socket_error, AuthenticationException) as exc:
             self._raise_authentication_err(exc)
 
@@ -86,6 +91,6 @@ if __name__ == '__main__':
     remote_host = Host(host_ip=os.getenv('HOST'),
                        key_file_path=path)
     
-    # remote_host.run_command('sudo whoami')
-    # remote_host.run_command('whoami')
-    remote_host.run_prompt_xpectd_command('sudo apt remove python3-pip', 'Y \n')
+    remote_host.run_command('sudo whoami')
+    remote_host.run_command('whoami')
+    remote_host.run_prompt_xpectd_command('sudo apt remove python3-pip', 'n \n')
