@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from fabric import Connection
+from invoke import Responder
 from paramiko.ssh_exception import AuthenticationException
 
 
@@ -43,6 +44,23 @@ class Host(object):
                 'The command `{0}` on host {1} failed with the error: '
                 '{2}'.format(command, self.host_ip, str(result.stderr)))
 
+    def run_prompt_xpectd_command(self, command, res_str):
+        try:
+            with self._get_connection() as connection:
+                print("Running prompt expected command `{0}` on {1}".format(command, self.host_ip))
+                passing = Responder(
+                    pattern = 'Do you want to continue?',
+                    response = res_str
+                )
+                result = connection.run(command, warn=True, hide='stderr', pty=True, watchers=[passing])
+        except (socket_error, AuthenticationException) as exc:
+            self._raise_authentication_err(exc)
+
+        if result.failed:
+            raise ExampleException(
+                'The command `{0}` on host {1} failed with the error: '
+                '{2}'.format(command, self.host_ip, str(result.stderr)))
+
     def put_file(self, local_path, remote_path):
         try:
             with self._get_connection() as connection:
@@ -68,5 +86,6 @@ if __name__ == '__main__':
     remote_host = Host(host_ip=os.getenv('HOST'),
                        key_file_path=path)
     
-    remote_host.run_command('sudo whoami')
-    remote_host.run_command('whoami')
+    # remote_host.run_command('sudo whoami')
+    # remote_host.run_command('whoami')
+    remote_host.run_prompt_xpectd_command('sudo apt remove python3-pip', 'Y \n')
